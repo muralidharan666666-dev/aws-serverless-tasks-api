@@ -330,9 +330,6 @@ in the /screenshots folder showing:
 
 **Muralidharan M.N**
 🎯 Cloud and DevOps Engineer
-🌱 Building AWS Portfolio Projects
-📚 Currently completing 5 AWS Projects
-🏗️ Project 3 of 5 — Serverless API
 
 ## 📄 License
 
