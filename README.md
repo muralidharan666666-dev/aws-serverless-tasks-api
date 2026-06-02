@@ -326,6 +326,10 @@ in the /screenshots folder showing:
 | IAM Role | Permissions configured |
 | Postman Tests | All 4 endpoints working |
 
+## 📌 Project Status
+
+> ⚠️ AWS resources (WAF) have been deleted after testing to manage costs.
+
 ## 👨‍💻 Author
 
 **Muralidharan M.N**
