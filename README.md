@@ -1,56 +1,74 @@
-# 🚀 AWS Serverless Tasks API
+# AWS Serverless Tasks API
 
-> A production-ready serverless REST API built on AWS — demonstrating real-world cloud architecture with authentication, security, scalability and monitoring.
+I built this project to get hands-on experience with serverless architecture on AWS. The idea was simple — a task management API where you can create, read, update and delete tasks. No server to manage, no infrastructure to maintain. Just Lambda functions, an API Gateway, and DynamoDB doing all the work.
 
-## 📌 Project Overview
+This was my first time combining Lambda, API Gateway, Cognito, and WAF together in one project. I ran into several real errors along the way which taught me more than any tutorial would have.
 
-This project implements a complete serverless backend for a Task Management application using AWS managed services. It demonstrates enterprise-level cloud architecture including:
+---
 
-- ✅ Serverless compute with AWS Lambda
-- ✅ REST API with Amazon API Gateway
-- ✅ NoSQL database with Amazon DynamoDB
-- ✅ User authentication with Amazon Cognito
-- ✅ Security protection with AWS WAF
-- ✅ Monitoring with Amazon CloudWatch
-- ✅ Infrastructure security with AWS IAM
+## What I Built
 
-## 🏗️ Architecture
+A REST API with four endpoints:
 
-![AWS Serverless Architecture](architecture/architecture.png)
+- `GET /tasks` — fetch all tasks
+- `POST /tasks` — create a new task
+- `PUT /tasks/{id}` — update a task
+- `DELETE /tasks/{id}` — delete a task
 
-### Request Flow:
-```
-1. Mobile app sends HTTPS request
-2. WAF applies security rules → blocks attacks
-3. Cognito validates JWT token → authenticates user
-4. API Gateway routes to correct Lambda function
-5. Lambda processes business logic
-6. DynamoDB stores or retrieves data
-7. CloudWatch logs entire transaction
-```
+Every endpoint requires a valid Cognito JWT token. Requests without a token get rejected at API Gateway before they even reach Lambda.
 
-## 🛠️ AWS Services Used
+---
 
-| Service | Purpose | Why Used |
-|---------|---------|----------|
-| **AWS Lambda** | Business logic | Serverless pay per use no server management |
-| **Amazon API Gateway** | REST API endpoints | Managed routing throttling and SSL |
-| **Amazon DynamoDB** | NoSQL database | Fast scalable serverless no schema |
-| **Amazon Cognito** | User authentication | Managed JWT auth no custom auth code |
-| **AWS WAF** | Security firewall | Blocks SQL injection XSS DDoS attacks |
-| **Amazon CloudWatch** | Monitoring and logs | Centralized logging and alerting |
-| **AWS IAM** | Permissions and roles | Least privilege security access |
+## Architecture
 
-## 📋 API Endpoints
+![Architecture Diagram](architecture/architecture.png)
 
-| Method | Endpoint | Description | Auth Required |
-|--------|---------|-------------|--------------|
-| `GET` | `/tasks` | Get all tasks | ✅ Yes |
-| `POST` | `/tasks` | Create new task | ✅ Yes |
-| `PUT` | `/tasks/{id}` | Update a task | ✅ Yes |
-| `DELETE` | `/tasks/{id}` | Delete a task | ✅ Yes |
+Here is how a request flows through the system:
 
-### Sample Request — Create Task:
+1. Client sends request to API Gateway endpoint
+2. WAF checks the request for common attack patterns
+3. API Gateway validates the JWT token via Cognito
+4. If the token is valid, it routes to the right Lambda
+5. Lambda reads or writes to DynamoDB
+6. CloudWatch captures the execution log automatically
+
+---
+
+## AWS Services I Used
+
+**AWS Lambda**
+I wrote five separate Lambda functions — one for each operation plus one to generate auth tokens for testing. Each function has its own IAM role with only the permissions it actually needs.
+
+**Amazon API Gateway**
+I set up a REST API with two resources: `/tasks` and `/tasks/{id}`. Each resource has the relevant HTTP methods attached and all of them go through the Cognito authorizer before reaching Lambda.
+
+**Amazon DynamoDB**
+Single table called `Tasks` with `id` as the partition key. I used uuid4 to generate unique IDs for each task. No schema to worry about and it handled everything quickly.
+
+**Amazon Cognito**
+Created a User Pool called `TasksUserPool` with email as the sign-in method. Set up an App Client called `TasksApp` with `ALLOW_USER_PASSWORD_AUTH` enabled. This is what lets Lambda authenticate with a username and password to get back a JWT token.
+
+**AWS WAF**
+Created a Web ACL called `TasksAPIProtection` and attached it to the API Gateway `dev` stage. Used AWS Managed Rule Groups which cover SQL injection, XSS, and other common attack patterns without having to configure individual rules manually.
+
+**Amazon CloudWatch**
+I did not configure this manually. Lambda automatically creates a log group for each function at `/aws/lambda/functionName`. I checked these during debugging to see what was actually happening inside each invocation.
+
+**AWS IAM**
+Created one IAM role called `lambda-dynamodb-role` and attached three policies: `AmazonDynamoDBFullAccess`, `AWSLambdaBasicExecutionRole`, and `AmazonCognitoPowerUser`.
+
+---
+
+## API Endpoints
+
+| Method | Endpoint | Auth Required |
+|--------|---------|--------------|
+| GET | /tasks | Yes |
+| POST | /tasks | Yes |
+| PUT | /tasks/{id} | Yes |
+| DELETE | /tasks/{id} | Yes |
+
+**Sample create request:**
 ```json
 POST /tasks
 Authorization: Bearer eyJraWQiOiJ...
@@ -60,7 +78,7 @@ Authorization: Bearer eyJraWQiOiJ...
 }
 ```
 
-### Sample Response:
+**Response:**
 ```json
 {
     "message": "Task created successfully",
@@ -68,25 +86,19 @@ Authorization: Bearer eyJraWQiOiJ...
 }
 ```
 
-## 🔒 Security Implementation
+---
 
-### Two Layers of Security:
+## Security Setup
 
-**Layer 1 — AWS WAF:**
-- Blocks SQL injection attacks
-- Blocks cross-site scripting XSS
-- Blocks DDoS attacks
-- AWS Managed Rule Groups applied
-- Attached directly to API Gateway
+I added security at two points in the request path.
 
-**Layer 2 — Amazon Cognito:**
-- JWT token based authentication
-- User registration and email verification
-- Token expiry management
-- Only verified users can access API
-- Every endpoint protected
+**WAF** sits in front of API Gateway and blocks requests that match known attack patterns. I used AWS Managed Rule Groups so I did not have to write individual rules.
 
-## 📁 Project Structure
+**Cognito** is attached as an authorizer on API Gateway. Every method has `TasksAuthorizer` set as the authorization type. Any request without a valid JWT token gets a 401 back immediately.
+
+---
+
+## Project Structure
 
 ```
 aws-serverless-tasks-api/
@@ -104,74 +116,38 @@ aws-serverless-tasks-api/
 │   └── getAuthToken/
 │       └── lambda_function.py
 ├── screenshots/
-│   └── all AWS service screenshots
 ├── .gitignore
 ├── LICENSE
 └── README.md
 ```
 
-## 🧪 API Testing Results
+---
 
-All endpoints tested using **Postman** with JWT Bearer Token authentication:
+## Errors I Hit and How I Fixed Them
 
-| Test | Method | Endpoint | Status | Result |
-|------|--------|---------|--------|--------|
-| Get all tasks | GET | /tasks | `200 OK` | ✅ Passed |
-| Create new task | POST | /tasks | `201 Created` | ✅ Passed |
-| Update task status | PUT | /tasks/{id} | `200 OK` | ✅ Passed |
-| Delete task | DELETE | /tasks/{id} | `200 OK` | ✅ Passed |
+### Error 1 — Cognito SECRET_HASH
 
-## 🚧 Challenges and Solutions
+When I tried to authenticate from Lambda, Cognito returned this error:
 
-### Challenge 1 — Cognito SECRET_HASH Error 🔐
-
-**Problem:**
 ```
 NotAuthorizedException: Client is configured
 with secret but SECRET_HASH was not received
 ```
 
-**Root Cause:**
-AWS Cognito App Client had a client secret configured.
-Every authentication request requires a SECRET_HASH
-calculated using HMAC-SHA256 algorithm combining
-username, client ID and client secret.
+After researching I found that when an App Client has a secret configured, every auth request needs a SECRET_HASH calculated from the username, client ID and client secret combined. Without it Cognito just rejects the call entirely.
 
-**Solution:**
-```python
-def get_secret_hash(username, client_id, client_secret):
-    message = username + client_id
-    dig = hmac.new(
-        client_secret.encode('utf-8'),
-        msg=message.encode('utf-8'),
-        digestmod=hashlib.sha256
-    ).digest()
-    return base64.b64encode(dig).decode()
-```
-
-**Key Learning:**
-Always handle Cognito client secrets properly.
-Understanding AWS security mechanisms is crucial
-for building production ready applications.
+I added that hash calculation to my Lambda function and passed it with the auth request. Authentication worked after that.
 
 ---
 
-### Challenge 2 — Cognito FORCE_CHANGE_PASSWORD State 👤
+### Error 2 — FORCE_CHANGE_PASSWORD
 
-**Problem:**
-```
-AuthenticationResult key not found
-User stuck in FORCE_CHANGE_PASSWORD status
-Login kept failing after user creation
-```
+After I created a test user in the Cognito console, login kept failing silently. The Lambda was running but `AuthenticationResult` was not in the response at all.
 
-**Root Cause:**
-New users created via AWS Console are placed in
-FORCE_CHANGE_PASSWORD state by default.
-They cannot authenticate until password
-is permanently confirmed.
+I checked the user in the Cognito console and saw the confirmation status was `Force change password`. Users created from the console are put into this state by default and cannot authenticate until the password is permanently set.
 
-**Solution:**
+I fixed it using this AWS CLI command in CloudShell:
+
 ```bash
 aws cognito-idp admin-set-user-password \
 --user-pool-id us-east-1_xxxxxxxxx \
@@ -181,160 +157,147 @@ aws cognito-idp admin-set-user-password \
 --region us-east-1
 ```
 
-**Key Learning:**
-Understanding Cognito user lifecycle states
-is essential for proper user management.
-In production always use email verification
-flow for proper user confirmation.
+After running that the status changed to `Confirmed` and login worked.
 
 ---
 
-### Challenge 3 — JWT Token Expiry During Testing 🔑
+### Error 3 — Token Expiry During Testing
 
-**Problem:**
-```
-401 Unauthorized
-The incoming token has expired
-```
+About an hour into testing I started getting 401 responses from every endpoint even though my requests looked correct.
 
-**Root Cause:**
-Cognito JWT ID tokens expire after 1 hour.
-Long testing sessions caused token expiry
-resulting in authentication failures across
-all API endpoints.
+The issue was that Cognito ID tokens expire after 1 hour. The token I had copied earlier was no longer valid and API Gateway was rejecting it.
 
-**Solution:**
-Created dedicated getAuthToken Lambda function
-to generate fresh tokens on demand:
-```python
-response = client.initiate_auth(
-    ClientId=client_id,
-    AuthFlow='USER_PASSWORD_AUTH',
-    AuthParameters={
-        'USERNAME': username,
-        'PASSWORD': password,
-        'SECRET_HASH': secret_hash
-    }
-)
-token = response['AuthenticationResult']['IdToken']
-```
+Instead of manually copying tokens every hour I created a separate Lambda called `getAuthToken` that calls Cognito and returns a fresh token. I just run that test in the Lambda console whenever my token expires during testing.
 
-**Key Learning:**
-In production applications always implement
-token refresh mechanism using Cognito
-refresh tokens which last 30 days.
-This ensures seamless user experience
-without frequent re-authentication.
+---
 
-## 🚀 How to Deploy
+## How to Deploy This Yourself
 
-### Prerequisites:
-- AWS Account
-- Python 3.12
-- AWS CLI configured
+You need an AWS account and AWS CLI configured.
 
-### Step by Step Deployment:
+**1. Create DynamoDB table**
+- Table name: `Tasks`
+- Partition key: `id` (String)
+- Leave everything else as default
 
-**Step 1 — Create DynamoDB Table:**
-```
-Table name: Tasks
-Partition key: id (String)
-Settings: Default
-```
+**2. Create IAM role**
+- Role name: `lambda-dynamodb-role`
+- Attach these policies:
+  - `AmazonDynamoDBFullAccess`
+  - `AWSLambdaBasicExecutionRole`
+  - `AmazonCognitoPowerUser`
 
-**Step 2 — Create IAM Role:**
-```
-Role name: lambda-dynamodb-role
-Policies:
-→ AmazonDynamoDBFullAccess
-→ AWSLambdaBasicExecutionRole
-→ AmazonCognitoPowerUser
-```
+**3. Create Lambda functions**
+- Runtime: Python 3.12
+- Assign the `lambda-dynamodb-role` role
+- Create one function per file in the `lambda/` folder
 
-**Step 3 — Deploy Lambda Functions:**
-```
-Runtime: Python 3.12
-Role: lambda-dynamodb-role
-Functions: createTask getTasks deleteTask updateTask getAuthToken
-```
+**4. Set up Cognito**
+- Create a User Pool called `TasksUserPool`
+- Sign-in method: Email
+- Create an App Client called `TasksApp`
+- Enable `ALLOW_USER_PASSWORD_AUTH` in the authentication flows
 
-**Step 4 — Set Up Cognito:**
-```
-User Pool: TasksUserPool
-Sign in method: Email
-App Client: TasksApp
-Auth flow: ALLOW_USER_PASSWORD_AUTH
-```
+**5. Set up API Gateway**
+- Create a REST API
+- Add resources `/tasks` and `/tasks/{id}`
+- Add GET, POST, PUT, DELETE methods
+- Set Lambda proxy integration on each method
+- Create a Cognito authorizer and attach it to all methods
+- Deploy to a stage called `dev`
 
-**Step 5 — Configure API Gateway:**
-```
-Type: REST API
-Resources: /tasks and /tasks/{id}
-Methods: GET POST PUT DELETE
-Authorizer: Cognito TasksAuthorizer
-Stage: dev
-```
+**6. Set up WAF**
+- Create a Web ACL called `TasksAPIProtection`
+- Resource type: Regional (us-east-1)
+- Associate it with your API Gateway dev stage
+- Add AWS Managed Rule Groups
 
-**Step 6 — Enable WAF:**
-```
-Web ACL: TasksAPIProtection
-Resource type: Regional
-Associate with: API Gateway dev stage
-Rules: AWS Managed Rules
-```
+---
 
-## 📊 Key Learnings
+## Testing
 
-```
-✅ Serverless architecture design and implementation
-✅ REST API development with API Gateway
-✅ NoSQL database modeling with DynamoDB
-✅ JWT authentication with Cognito
-✅ Two layer security with WAF and Cognito
-✅ API testing with Postman
-✅ AWS IAM least privilege permissions
-✅ CloudWatch monitoring and logging
-✅ Git version control workflow
-✅ Technical problem solving and debugging
-```
+I tested all four endpoints using Postman with Bearer Token authentication.
 
-## 🎯 Real World Applications
+Steps to test:
+1. Run the `getAuthToken` Lambda test to get a token
+2. Copy the token value from the response
+3. In Postman set Auth Type to Bearer Token
+4. Paste the token
+5. Send your request
 
-This serverless architecture is used by companies for:
+| Endpoint | Method | Status |
+|---------|--------|--------|
+| /tasks | GET | 200 OK |
+| /tasks | POST | 201 Created |
+| /tasks/{id} | PUT | 200 OK |
+| /tasks/{id} | DELETE | 200 OK |
 
-| Use Case | Example |
-|----------|---------|
-| Mobile app backends | Ride sharing apps |
-| IoT data processing | Smart home devices |
-| E-commerce APIs | Online shopping carts |
-| Real-time analytics | Live dashboards |
-| Microservices | Large scale applications |
+One thing to watch out for — the token expires after 1 hour. If you start getting 401 responses just run `getAuthToken` again to get a fresh one.
 
-## 📸 Project Screenshots
+---
 
-All AWS service screenshots available
-in the /screenshots folder showing:
+## What I Learned
 
-| Screenshot | What it Proves |
-|-----------|---------------|
-| Lambda Functions | All 5 functions deployed |
-| DynamoDB Table | Data storage working |
-| API Gateway | REST API configured |
-| Cognito User Pool | Authentication setup |
-| WAF Protection | Security enabled |
-| CloudWatch Logs | Monitoring active |
-| IAM Role | Permissions configured |
-| Postman Tests | All 4 endpoints working |
+A few things I did not know before building this:
 
-## 📌 Project Status
+**Cognito App Client secrets need special handling.**
+If you create a client with a secret enabled every auth call needs a calculated hash included. I did not know this until I hit the error. Next time I would create the client without a secret to keep things simpler.
 
-> ⚠️ AWS resources (WAF) have been deleted after testing to manage costs.
+**Lambda automatically creates CloudWatch log groups.**
+I did not configure any logging. Lambda just creates `/aws/lambda/functionName` automatically. I used these logs heavily when debugging the FORCE_CHANGE_PASSWORD issue.
 
-## 👨‍💻 Author
+**New Cognito users start in a temporary password state.**
+Users created from the AWS Console cannot log in until the password is permanently confirmed. I had to use the AWS CLI to fix this. In a real app users would go through the normal registration flow which handles this automatically.
+
+**WAF managed rules take a few minutes to activate.**
+After I attached the WAF to API Gateway it was not instant. There was a short window where requests were still going through before the rules kicked in fully.
+
+---
+
+## Screenshots
+
+All screenshots are in the `/screenshots` folder.
+
+What is there:
+- Lambda functions list showing all 5 deployed
+- DynamoDB table with sample task items
+- API Gateway resource tree showing all endpoints
+- Cognito User Pool overview
+- WAF Web ACL with associated API Gateway
+- CloudWatch log group list for all Lambda functions
+- IAM role with attached policies
+- Postman screenshots for all four endpoint tests
+
+---
+
+## About
 
 **Muralidharan M.N**
-🎯 Cloud and DevOps Engineer
+AWS re/Start Graduate | AWS Certified Cloud Practitioner |
+Cloud Engineer in the Making
 
-## 📄 License
+I completed the AWS re/Start program — AWS's official career
+launch program for cloud — and earned the AWS Cloud Practitioner
+certification. Since then I have spent 6 months building real
+hands-on AWS projects including this event-driven order processing
+system to go beyond what certifications teach.
 
-MIT License — feel free to use this project for learning!
+I am actively looking for my first cloud role.
+I am someone who questions everything — I want to understand
+not just how to configure a service but why it was designed
+that way. This project took me a full day of building and
+debugging and I learned more from the errors than from
+anything that worked first time.
+
+AWS re/Start Graduate
+
+AWS Certified Cloud Practitioner
+
+Tirunelveli, Tamil Nadu — Open to Relocation & Remote
+
+Actively looking for Cloud Engineer | DevOps Engineer | AWS Support Engineer roles
+
+LinkedIn: https://www.linkedin.com/in/muralidharan-m-n-78a2522b8
+
+GitHub: https://github.com/muralidharan666666-dev
+
