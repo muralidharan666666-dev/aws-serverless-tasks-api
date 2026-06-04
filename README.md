@@ -238,10 +238,10 @@ One thing to watch out for — the token expires after 1 hour. If you start gett
 
 ## What I Learned
 
-Building this project made me understand how real APIs stay secure under actual internet traffic.
+**Building this project made me understand how real APIs stay secure under actual internet traffic.
 Every API you interact with — UPI payments, banking apps, food delivery — is constantly receiving requests from bots, scanners and attackers alongside real users. If authentication is the only protection, those malicious requests still reach your server and get processed before getting rejected. At scale that is expensive and dangerous.
 WAF is what sits in front and stops that from happening. SQL injection attempts, XSS, bot floods — all blocked at the edge before any logic runs. Only clean traffic gets through to Cognito. Cognito then checks whether that clean request actually belongs to a valid user.
-One layer filters what comes in. The other checks who is allowed in. Authentication alone was never enough.
+One layer filters what comes in. The other checks who is allowed in. Authentication alone was never enough.**
 
 ## Screenshots
 
