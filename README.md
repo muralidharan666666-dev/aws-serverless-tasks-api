@@ -238,20 +238,7 @@ One thing to watch out for — the token expires after 1 hour. If you start gett
 
 ## What I Learned
 
-A few things I did not know before building this:
-
-**Cognito App Client secrets need special handling.**
-If you create a client with a secret enabled every auth call needs a calculated hash included. I did not know this until I hit the error. Next time I would create the client without a secret to keep things simpler.
-
-**Lambda automatically creates CloudWatch log groups.**
-I did not configure any logging. Lambda just creates `/aws/lambda/functionName` automatically. I used these logs heavily when debugging the FORCE_CHANGE_PASSWORD issue.
-
-**New Cognito users start in a temporary password state.**
-Users created from the AWS Console cannot log in until the password is permanently confirmed. I had to use the AWS CLI to fix this. In a real app users would go through the normal registration flow which handles this automatically.
-
-**WAF managed rules take a few minutes to activate.**
-After I attached the WAF to API Gateway it was not instant. There was a short window where requests were still going through before the rules kicked in fully.
-
+The part that took me longest was understanding the difference between using Cognito alone versus pairing it with WAF. A lot of setups just attach a Cognito authorizer to API Gateway, which works for authentication but means malicious requests — SQL injection, XSS, bot floods — still reach your endpoint and get processed before Cognito even rejects them. The WAF approach blocks those requests before they hit API Gateway at all — only clean traffic gets through to Cognito. Cognito handles who is allowed in. WAF handles what is allowed through.
 ---
 
 ## Screenshots
