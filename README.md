@@ -37,7 +37,7 @@ Here is how a request flows through the system:
 ## AWS Services I Used
 
 **AWS Lambda**
-I wrote five separate Lambda functions — one for each operation plus one to generate auth tokens for testing. Each function has its own IAM role with only the permissions it actually needs.
+I wrote five separate Lambda functions — one for each operation plus one to generate auth tokens for testing. All five share one IAM role, lambda-dynamodb-role
 
 **Amazon API Gateway**
 I set up a REST API with two resources: `/tasks` and `/tasks/{id}`. Each resource has the relevant HTTP methods attached and all of them go through the Cognito authorizer before reaching Lambda.
