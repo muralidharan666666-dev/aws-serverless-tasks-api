@@ -152,7 +152,7 @@ I fixed it using this AWS CLI command in CloudShell:
 aws cognito-idp admin-set-user-password \
 --user-pool-id us-east-1_xxxxxxxxx \
 --username user@email.com \
---password Password@123 \
+--password <PERMANENT_PASSWORD> \
 --permanent \
 --region us-east-1
 ```
