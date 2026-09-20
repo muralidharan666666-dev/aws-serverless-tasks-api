@@ -245,18 +245,40 @@ One layer filters what comes in. The other checks who is allowed in. Authenticat
 
 ## Screenshots
 
-All screenshots are in the `/screenshots` folder.
+<details>
+<summary><b>Security: Cognito + WAF</b> (click to expand)</summary>
 
-What is there:
-- Lambda functions list showing all 5 deployed
-- DynamoDB table with sample task items
-- API Gateway resource tree showing all endpoints
-- Cognito User Pool overview
-- WAF Web ACL with associated API Gateway
-- CloudWatch log group list for all Lambda functions
-- IAM role with attached policies
-- Postman screenshots for all four endpoint tests
+![Cognito user pool](screenshots/4-cognito-userpool.png)
+![Cognito users](screenshots/4b-cognito-users.png)
+![WAF attached to the API](screenshots/5-taskapi-protection-associated-resource.png)
+![WAF rules](screenshots/5b-task-api-protection-waf-rules.png)
+</details>
 
+<details>
+<summary><b>API tests: GET / POST / PUT / DELETE</b> (click to expand)</summary>
+
+![GET request](screenshots/6a-get-request.png)
+![POST request](screenshots/6b-post-request.png)
+![PUT request](screenshots/6c-put-request.png)
+![DELETE request](screenshots/6d-delete-request.png)
+</details>
+
+<details>
+<summary><b>Backend: Lambda, DynamoDB, API Gateway, IAM</b> (click to expand)</summary>
+
+![Lambda functions](screenshots/1-lambda-functions.png)
+![DynamoDB items](screenshots/2-dynamodb-items.png)
+![API Gateway resources](screenshots/3-api-gateway-resources.png)
+![API Gateway stages](screenshots/9-api-gateway-stages.png)
+![IAM role](screenshots/7-iam-role.png)
+</details>
+
+<details>
+<summary><b>Monitoring: CloudWatch logs</b> (click to expand)</summary>
+
+![CloudWatch log groups](screenshots/8-cloudwatch-logs.png)
+![Create-task logs](screenshots/8b-cloudwatch-create-task-logs.png)
+</details>
 ---
 
 
