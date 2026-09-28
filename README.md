@@ -134,7 +134,7 @@ NotAuthorizedException: Client is configured
 with secret but SECRET_HASH was not received
 ```
 
-After researching I found that when an App Client has a secret configured, every auth request needs a SECRET_HASH calculated from the username, client ID and client secret combined. Without it Cognito just rejects the call entirely.
+After researching I found that when an App Client has a secret configured, every auth request needs a SECRET_HASH: an HMAC-SHA256 of the username plus the client ID, using the client secret as the key, then Base64-encoded. Without it Cognito just rejects the call entirely.
 
 I added that hash calculation to my Lambda function and passed it with the auth request. Authentication worked after that.
 
@@ -279,14 +279,32 @@ One layer filters what comes in. The other checks who is allowed in. Authenticat
 ![CloudWatch log groups](screenshots/8-cloudwatch-logs.png)
 ![Create-task logs](screenshots/8b-cloudwatch-create-task-logs.png)
 </details>
+
 ---
 
+## Known Gaps
+
+These are things I know are not right yet. I have not fixed them. This is what I would do next.
+
+**IAM is far too broad.** All five Lambda functions share one role, `lambda-dynamodb-role`, with `AmazonDynamoDBFullAccess` and `AmazonCognitoPowerUser` attached. That is far more than any of them need. The least privilege way would be a separate role per function, each allowed only the one action it actually makes on the `Tasks` table:
+
+- `getTasks` — `dynamodb:Scan`
+- `createTask` — `dynamodb:PutItem`
+- `updateTask` — `dynamodb:UpdateItem`
+- `deleteTask` — `dynamodb:DeleteItem`
+- `getAuthToken` — no DynamoDB access at all. Its only call is Cognito's `InitiateAuth`, and Cognito does not check IAM policies for that call, so it needs no Cognito permissions either.
+
+Each role would still keep `AWSLambdaBasicExecutionRole` so the logs keep going to CloudWatch.
+
+**getAuthToken is a testing helper.** It has placeholder values for the client secret and password written directly in the code. In a real setup the client secret would come from AWS Secrets Manager, never the code.
+
+---
 
 ## Author
 
 **Muralidharan M N**
 
-AWS Certified Cloud Practitioner | AWS re/Start Graduate
+AWS Certified Cloud Practitioner | HashiCorp Certified: Terraform Associate | AWS re/Start Graduate
 
 LinkedIn: https://www.linkedin.com/in/muralidharan-m-n-78a2522b8
 
